@@ -19,7 +19,8 @@
 enum {
 	MC_EVENT,
 	MCE_EVENT,
-	AER_EVENT
+	AER_EVENT,
+	UNKNOWN_SEC_EVENT
 };
 
 #ifdef HAVE_ABRT_REPORT
@@ -27,12 +28,14 @@ enum {
 int ras_report_mc_event(struct ras_events *ras, struct ras_mc_event *ev);
 int ras_report_aer_event(struct ras_events *ras, struct ras_aer_event *ev);
 int ras_report_mce_event(struct ras_events *ras, struct mce_event *ev);
+int ras_report_unknown_sec_event(struct ras_events *ras, struct ras_unknown_sec_event *ev);
 
 #else
 
 static inline int ras_report_mc_event(struct ras_events *ras, struct ras_mc_event *ev) { return 0; };
 static inline int ras_report_aer_event(struct ras_events *ras, struct ras_aer_event *ev) { return 0; };
 static inline int ras_report_mce_event(struct ras_events *ras, struct mce_event *ev) { return 0; };
+static inline int ras_report_unknown_sec_event(struct ras_events *ras, struct ras_unknown_sec_event *ev) { return 0; };
 
 #endif
 

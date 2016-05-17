@@ -44,6 +44,15 @@ AS_IF([test "x$enable_aer" = "xyes"], [
 ])
 AM_CONDITIONAL([WITH_AER], [test x$enable_aer = xyes])
 
+AC_ARG_ENABLE([unknown_sec],
+    AS_HELP_STRING([--enable-unknown-sec], [enable UNKNOWN_SEC events (currently experimental)]))
+
+AS_IF([test "x$enable_unknown_sec" = "xyes"], [
+  AC_DEFINE(HAVE_UNKNOWN_SEC,1,"have UNKNOWN_SEC events collect")
+  AC_SUBST([WITH_UNKNOWN_SEC])
+])
+AM_CONDITIONAL([WITH_UNKNOWN_SEC], [test x$enable_unknown_sec = xyes])
+
 AC_ARG_ENABLE([mce],
     AS_HELP_STRING([--enable-mce], [enable MCE events (currently experimental)]))
 
