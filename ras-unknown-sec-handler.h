@@ -26,6 +26,6 @@ int ras_unknown_sec_event_handler(struct trace_seq *s,
 			 struct pevent_record *record,
 			 struct event_format *event, void *context);
 
-void print_le_hex(struct trace_seq *s, const int8_t *buf, int index);
+void print_le_hex(struct trace_seq *s, const uint8_t *buf, int index);
 
 #endif

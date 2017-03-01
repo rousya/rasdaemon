@@ -61,8 +61,8 @@ struct ras_unknown_sec_event {
 	int32_t error_count;
 	const char *sec_type, *fru_id, *fru_text;
 	const char *severity;
-	const int8_t *error;
-	int32_t length;
+	const uint8_t *error;
+	uint32_t length;
 };
 
 struct ras_mc_event;

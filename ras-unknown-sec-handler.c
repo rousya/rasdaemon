@@ -25,8 +25,33 @@
 #include "ras-logger.h"
 #include "ras-report.h"
 
-void print_le_hex(struct trace_seq *s, const int8_t *buf, int index) {
+void print_le_hex(struct trace_seq *s, const uint8_t *buf, int index)
+{
 	trace_seq_printf(s, "%02x%02x%02x%02x", buf[index+3], buf[index+2], buf[index+1], buf[index]);
+}
+
+static char *uuid_le(const char *uu)
+{
+	static char uuid[sizeof("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")];
+	char *p = uuid;
+	int i;
+	static const unsigned char le[16] = {3, 2, 1, 0, 5, 4, 7, 6,
+						8, 9, 10, 11, 12, 13, 14, 15};
+
+	for (i = 0; i < 16; i++) {
+		p += sprintf(p, "%.2x", uu[le[i]]);
+		switch (i) {
+		case 3:
+		case 5:
+		case 7:
+		case 9:
+			*p++ = '-';
+			break;
+		}
+	}
+
+	*p = 0;
+	return uuid;
 }
 
 int ras_unknown_sec_event_handler(struct trace_seq *s,
@@ -81,10 +106,15 @@ int ras_unknown_sec_event_handler(struct trace_seq *s,
 	ev.sec_type = pevent_get_field_raw(s, event, "sec_type", record, &len, 1);
 	if(!ev.sec_type)
 		return -1;
-	trace_seq_printf(s, "\n section type: ");
-	for(i=0; i<16; i++) {
-		trace_seq_printf(s, "%02x", ev.sec_type[i]);
-	}
+
+	trace_seq_printf(s, "\n section type: %s", uuid_le(ev.sec_type));
+	ev.fru_text = pevent_get_field_raw(s, event, "fru_text",
+						record, &len, 1);
+	ev.fru_id = pevent_get_field_raw(s, event, "fru_id",
+						record, &len, 1);
+	trace_seq_printf(s, " fru text: %s fru id: %s ",
+				ev.fru_text,
+				uuid_le(ev.fru_id));
 
 	if (pevent_get_field_val(s, event, "len", record, &val, 1) < 0)
 		return -1;
