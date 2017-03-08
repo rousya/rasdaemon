@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Mauro Carvalho Chehab <mchehab@redhat.com>
+ * Copyright (c) 2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -150,6 +151,60 @@ int ras_store_aer_event(struct ras_events *ras, struct ras_aer_event *ev)
 	if (rc != SQLITE_OK && rc != SQLITE_DONE)
 		log(TERM, LOG_ERR,
 		    "Failed reset aer_event on sqlite: error = %d\n",
+		    rc);
+	log(TERM, LOG_INFO, "register inserted at db\n");
+
+	return rc;
+}
+#endif
+
+/*
+ * Table and functions to handle ras:unknown sec
+ */
+
+#ifdef HAVE_UNKNOWN_SEC
+static const struct db_fields unknown_sec_event_fields[] = {
+		{ .name="id",			.type="INTEGER PRIMARY KEY" },
+		{ .name="timestamp",		.type="TEXT" },
+		{ .name="error_count",		.type="INTEGER" },
+		{ .name="sec_type",		.type="TEXT" },
+		{ .name="fru_id",		.type="BLOB" },
+		{ .name="fru_text",		.type="TEXT" },
+		{ .name="severity",		.type="TEXT" },
+		{ .name="error",		.type="BLOB" },
+};
+
+static const struct db_table_descriptor unknown_sec_event_tab = {
+	.name = "unknown_sec_event",
+	.fields = unknown_sec_event_fields,
+	.num_fields = ARRAY_SIZE(unknown_sec_event_fields),
+};
+
+int ras_store_unknown_sec_record(struct ras_events *ras, struct ras_unknown_sec_event *ev)
+{
+	int rc;
+	struct sqlite3_priv *priv = ras->db_priv;
+
+	if (!priv || !priv->stmt_unknown_sec_record)
+		return 0;
+	log(TERM, LOG_INFO, "unknown_sec_event store: %p\n", priv->stmt_unknown_sec_record);
+
+	sqlite3_bind_text (priv->stmt_unknown_sec_record,  1, ev->timestamp, -1, NULL);
+	sqlite3_bind_int  (priv->stmt_unknown_sec_record,  2, ev->error_count);
+	sqlite3_bind_text (priv->stmt_unknown_sec_record,  3, ev->sec_type, -1, NULL);
+	sqlite3_bind_blob (priv->stmt_unknown_sec_record,  4, ev->fru_id, 16, NULL);
+	sqlite3_bind_text (priv->stmt_unknown_sec_record,  5, ev->fru_text, -1, NULL);
+	sqlite3_bind_text (priv->stmt_unknown_sec_record,  6, ev->severity, -1, NULL);
+	sqlite3_bind_blob (priv->stmt_unknown_sec_record,  7, ev->error, ev->length, NULL);
+
+	rc = sqlite3_step(priv->stmt_unknown_sec_record);
+	if (rc != SQLITE_OK && rc != SQLITE_DONE)
+		log(TERM, LOG_ERR,
+		    "Failed to do unknown_sec_event step on sqlite: error = %d\n", rc);
+	rc = sqlite3_reset(priv->stmt_unknown_sec_record);
+	if (rc != SQLITE_OK && rc != SQLITE_DONE)
+		log(TERM, LOG_ERR,
+		    "Failed reset unknown_sec_event on sqlite: error = %d\n",
 		    rc);
 	log(TERM, LOG_INFO, "register inserted at db\n");
 

@@ -1,3 +1,16 @@
+/*
+ * Copyright (c) 2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -196,6 +209,27 @@ static int set_aer_event_backtrace(char *buf, struct ras_aer_event *ev){
 	return 0;
 }
 
+static int set_unknown_sec_event_backtrace(char *buf, struct ras_unknown_sec_event *ev){
+	char bt_buf[MAX_BACKTRACE_SIZE];
+
+	if(!buf || !ev)
+		return -1;
+
+	sprintf(bt_buf, "BACKTRACE="    \
+						"timestamp=%s\n"        \
+						"error_count=%d\n"       \
+						"severity=%d\n" \
+						"length=%d\n",     \
+						ev->timestamp,  \
+						ev->error_count, \
+						ev->severity,   \
+						ev->length);
+
+	strcat(buf, bt_buf);
+
+	return 0;
+}
+
 static int commit_report_backtrace(int sockfd, int type, void *ev){
 	char buf[MAX_BACKTRACE_SIZE];
 	char *pbuf = buf;
@@ -217,6 +251,9 @@ static int commit_report_backtrace(int sockfd, int type, void *ev){
 		break;
 	case MCE_EVENT:
 		rc = set_mce_event_backtrace(buf, (struct mce_event *)ev);
+		break;
+	case UNKNOWN_SEC_EVENT:
+		rc = set_unknown_sec_event_backtrace(buf, (struct ras_unknown_sec_event *)ev);
 		break;
 	default:
 		return -1;
@@ -343,6 +380,51 @@ aer_fail:
 	}else{
 		return -1;
 	}
+}
+
+int ras_report_unknown_sec_event(struct ras_events *ras, struct ras_unknown_sec_event *ev){
+	char buf[MAX_MESSAGE_SIZE];
+	int sockfd = 0;
+	int rc = -1;
+
+	memset(buf, 0, sizeof(buf));
+
+	sockfd = setup_report_socket();
+	if(sockfd < 0){
+		return rc;
+	}
+
+	rc = commit_report_basic(sockfd);
+	if(rc < 0){
+		goto unknown_sec_fail;
+	}
+
+	rc = commit_report_backtrace(sockfd, UNKNOWN_SEC_EVENT, ev);
+	if(rc < 0){
+		goto unknown_sec_fail;
+	}
+
+	sprintf(buf, "ANALYZER=%s", "rasdaemon-unknown-sec");
+	rc = write(sockfd, buf, strlen(buf) + 1);
+	if(rc < strlen(buf) + 1){
+		goto unknown_sec_fail;
+	}
+
+	sprintf(buf, "REASON=%s", "Unknown CPER section problem");
+	rc = write(sockfd, buf, strlen(buf) + 1);
+	if(rc < strlen(buf) + 1){
+		goto unknown_sec_fail;
+	}
+
+	rc = 0;
+
+unknown_sec_fail:
+
+	if(sockfd > 0){
+		close(sockfd);
+	}
+
+	return rc;
 }
 
 int ras_report_mce_event(struct ras_events *ras, struct mce_event *ev){

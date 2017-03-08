@@ -24,6 +24,9 @@ endif
 if WITH_AER
    rasdaemon_SOURCES += ras-aer-handler.c
 endif
+if WITH_UNKNOWN_SEC
+   rasdaemon_SOURCES += ras-unknown-sec-handler.c
+endif
 if WITH_MCE
    rasdaemon_SOURCES += ras-mce-handler.c mce-intel.c mce-amd-k8.c \
 			mce-intel-p4-p6.c mce-intel-nehalem.c \
